@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+use Symfony\Component\Console\Input\ArgvInput;
+
+define('LARAVEL_START', microtime(true));
+
+// Pastikan proyek sudah di-install (composer install) sebelum artisan dipakai.
+if (! file_exists(__DIR__.'/vendor/autoload.php')) {
+    fwrite(STDERR, "vendor/autoload.php tidak ditemukan.\nJalankan: composer install\n");
+    exit(1);
+}
+
+require __DIR__.'/vendor/autoload.php';
+
+$app = require_once __DIR__.'/bootstrap/app.php';
+
+$status = $app->handleCommand(new ArgvInput);
+
+exit($status);

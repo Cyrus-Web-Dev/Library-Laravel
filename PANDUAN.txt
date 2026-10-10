@@ -1,0 +1,414 @@
+========================================================================
+ PANDUAN LENGKAP — PERPUSTAKAAN DIGITAL
+ Laravel + Inertia + Vue 3 + Tailwind + PostgreSQL
+========================================================================
+Dokumen ini berisi semua yang kamu butuhkan untuk memasang, menjalankan,
+dan memahami proyek ini dari nol — termasuk untuk orang yang baru
+pertama kali pegang Laravel.
+
+Baca README.md juga untuk detail teknis tambahan (REST API, Argon2id,
+dll). File ini fokus ke langkah PRAKTIS: apa yang harus diketik, dalam
+urutan apa, dan apa yang harus terjadi di tiap langkah.
+
+
+------------------------------------------------------------------------
+ DAFTAR ISI
+------------------------------------------------------------------------
+ 1. Yang perlu disiapkan di komputermu
+ 2. Instalasi langkah demi langkah
+ 3. Mengisi data contoh yang realistis (ShowcaseSeeder)
+ 4. Menjalankan aplikasi sehari-hari
+ 5. Menyiapkan Gmail API (untuk kode verifikasi email)
+ 6. Akun demo & cara masuk
+ 7. Peta fitur: apa yang sudah ada, apa yang belum
+ 8. Struktur folder (buat yang mau mengubah kode)
+ 9. Masalah umum & solusinya
+10. Perintah-perintah penting (contekan cepat)
+
+
+------------------------------------------------------------------------
+ 1. YANG PERLU DISIAPKAN DI KOMPUTERMU
+------------------------------------------------------------------------
+Sebelum mulai, pastikan sudah terpasang:
+
+  - PHP 8.2 atau lebih baru
+    Cek dengan: php -v
+  - Composer (pengelola paket PHP)
+    Cek dengan: composer -V
+  - Node.js 18+ dan npm
+    Cek dengan: node -v   dan   npm -v
+  - PostgreSQL 14+ (database)
+    Cek dengan: psql --version
+
+Kalau salah satu belum ada:
+  - PHP + Composer paling gampang lewat Laragon (Windows) atau Herd (Mac),
+    atau XAMPP juga bisa asal versi PHP-nya 8.2+.
+  - Node.js: unduh dari https://nodejs.org (pilih versi LTS).
+  - PostgreSQL: unduh dari https://www.postgresql.org/download/, atau
+    pakai pgAdmin yang ikut terpasang otomatis untuk kelola database
+    lewat tampilan grafis (tidak perlu command line kalau males).
+
+Tidak wajib tapi membantu: akun Gmail (untuk fitur kirim kode verifikasi
+email — dijelaskan di Bagian 5). Tanpa ini pun aplikasi tetap bisa
+dipakai untuk uji coba, kode OTP akan dicatat ke file log saja.
+
+
+------------------------------------------------------------------------
+ 2. INSTALASI LANGKAH DEMI LANGKAH
+------------------------------------------------------------------------
+Buka terminal / Command Prompt, masuk ke folder proyek ini, lalu ketik
+perintah-perintah berikut SATU PER SATU (tunggu sampai selesai sebelum
+lanjut ke baris berikutnya):
+
+    composer install
+
+    Ini mengunduh semua "mesin" Laravel. Prosesnya beberapa menit
+    tergantung koneksi internet. Pastikan internet nyala — perintah ini
+    butuh akses ke Packagist (packagist.org).
+
+    npm install
+
+    Ini mengunduh semua perlengkapan tampilan (Vue, Tailwind, dst).
+
+    cp .env.example .env
+
+    (Di Windows pakai Command Prompt, ganti "cp" jadi "copy".)
+    Ini membuat file pengaturan ".env" dari contohnya. File inilah
+    tempat kamu mengatur koneksi database, dsb.
+
+    php artisan key:generate
+
+    Membuat kunci enkripsi unik untuk aplikasimu.
+
+Sekarang buka file .env dengan text editor apa saja (Notepad, VS Code,
+dst), cari bagian ini, dan sesuaikan dengan database PostgreSQL-mu:
+
+    DB_CONNECTION=pgsql
+    DB_HOST=127.0.0.1
+    DB_PORT=5432
+    DB_DATABASE=perpustakaan
+    DB_USERNAME=postgres
+    DB_PASSWORD=isi_password_postgres_kamu
+
+Buat database kosong bernama "perpustakaan":
+  - Lewat terminal:   createdb perpustakaan
+  - Atau lewat pgAdmin: klik kanan "Databases" > Create > Database,
+    isi nama "perpustakaan", simpan.
+
+Terakhir, jalankan:
+
+    php artisan perpus:install
+
+Perintah ini akan:
+  1. Membuat semua tabel database secara otomatis.
+  2. Mengisi data dasar (genre buku, tipe buku, pengaturan default).
+  3. Menanyakan nama, username, email, dan password untuk membuat akun
+     SUPER ADMIN (Kepala Pustaka) pertamamu — ketik saja sesuai yang
+     diminta di layar.
+
+Kalau semua lancar, akan muncul pesan "Selesai!" beserta akunmu.
+
+
+------------------------------------------------------------------------
+ 3. MENGISI DATA CONTOH YANG REALISTIS (ShowcaseSeeder)
+------------------------------------------------------------------------
+Supaya aplikasi tidak terasa kosong saat pertama kali dibuka — ada 32
+judul buku, 16 anggota, puluhan riwayat peminjaman dengan berbagai
+status, ulasan, dan lain-lain — jalankan:
+
+    php artisan db:seed --class=ShowcaseSeeder
+
+PENTING: perintah ini membuat akun Super Admin-nya SENDIRI (username
+"kepala"), terpisah dari akun yang kamu buat lewat "perpus:install" di
+Bagian 2. Kedua akun itu sama-sama tetap ada, tidak saling menimpa.
+Kalau kamu cuma mau coba-coba aplikasi dengan cepat, boleh langsung
+lewati "perpus:install" dan pakai akun "kepala" dari ShowcaseSeeder ini
+saja (daftar lengkap akunnya ada di Bagian 6).
+
+Data yang akan terisi:
+  - 1 Super Admin + 2 Pustakawan (satu di antaranya awalnya anggota
+    biasa yang pengajuannya disetujui jadi pustakawan)
+  - 16 anggota dengan beragam jenis: Siswa, Mahasiswa, Guru, Umum
+  - 32 judul buku lintas semua genre & tipe (novel, manga, manhwa,
+    buku pelajaran, kamus, jurnal, dongeng, dll)
+  - ±26 transaksi peminjaman dengan SEMUA kemungkinan status: sedang
+    dipinjam, terlambat (ada yang dendanya belum dibayar, ada yang
+    sudah), dikembalikan tepat waktu, hilang, menunggu persetujuan,
+    ditolak, dibatalkan anggota, menunggu konfirmasi pengembalian, dan
+    yang sudah pernah diperpanjang
+  - Ulasan bintang + komentar, buku favorit per anggota
+  - Usulan judul buku baru (menunggu, disetujui, ditolak, terpenuhi)
+  - Pengajuan jadi pustakawan (menunggu, disetujui, ditolak)
+
+Aman dijalankan berkali-kali — kalau akun "kepala" sudah ada, perintah
+ini otomatis berhenti tanpa membuat data dobel.
+
+Mau mulai dari data kosong lagi? Jalankan ini (HATI-HATI, ini menghapus
+SEMUA data termasuk akun yang sudah kamu buat sendiri):
+
+    php artisan migrate:fresh
+    php artisan db:seed --class=ShowcaseSeeder
+
+
+------------------------------------------------------------------------
+ 4. MENJALANKAN APLIKASI SEHARI-HARI
+------------------------------------------------------------------------
+Setiap kali mau mencoba/mengembangkan aplikasi, buka DUA jendela
+terminal terpisah, biarkan keduanya tetap menyala:
+
+  Terminal 1 (server backend):
+    php artisan serve
+
+  Terminal 2 (pembangun tampilan, mode otomatis-refresh):
+    npm run dev
+
+Buka browser ke:  http://127.0.0.1:8000
+
+Untuk menghentikan, tekan Ctrl+C di masing-masing terminal.
+
+Kalau nanti sudah selesai dan mau benar-benar dipakai (bukan cuma
+dicoba di komputer sendiri), ganti "npm run dev" dengan:
+    npm run build
+lalu cukup jalankan server backend saja (tanpa "npm run dev" lagi).
+
+
+------------------------------------------------------------------------
+ 5. MENYIAPKAN GMAIL API (untuk kode verifikasi email)
+------------------------------------------------------------------------
+Aplikasi ini mengirim kode verifikasi (6 digit) lewat Gmail API saat
+ada yang mendaftar atau lupa password. Tanpa disiapkan, sistem akan
+tetap jalan di mode percobaan: kode-nya dicatat ke file
+"storage/logs/laravel.log" alih-alih benar-benar dikirim ke email.
+
+Supaya kode BENAR-BENAR terkirim ke email asli, ikuti langkah berikut
+(sekali saja, ±10 menit):
+
+  LANGKAH 1 — Buat project Google Cloud
+    Buka https://console.cloud.google.com/
+    Klik "Select a project" di pojok kiri atas > "New Project"
+    Beri nama bebas, misal "Perpustakaan Digital", klik Create.
+
+  LANGKAH 2 — Aktifkan Gmail API
+    Di menu kiri: APIs & Services > Library
+    Cari "Gmail API" > klik > klik tombol "Enable"
+
+  LANGKAH 3 — Atur layar persetujuan (OAuth consent screen)
+    APIs & Services > OAuth consent screen
+    Pilih "External" > Create
+    Isi nama aplikasi (bebas) dan email kamu di dua kolom yang wajib,
+    lalu Save and Continue terus sampai selesai (boleh skip bagian
+    yang tidak wajib).
+    Di bagian "Scopes", klik "Add or Remove Scopes", cari dan centang:
+        https://www.googleapis.com/auth/gmail.send
+    Di bagian "Test users", tambahkan alamat Gmail yang akan dipakai
+    untuk MENGIRIM email (akun Gmail-mu sendiri juga boleh).
+
+  LANGKAH 4 — Buat kredensial OAuth
+    APIs & Services > Credentials > Create Credentials > OAuth client ID
+    Application type: pilih "Desktop app"
+    Beri nama bebas > Create
+    Klik "Download JSON" — simpan file ini.
+    Ganti nama file itu menjadi:  credentials.json
+    Pindahkan ke folder:  storage/app/credentials/credentials.json
+
+  LANGKAH 5 — Dapatkan refresh token (token.json)
+    Cara termudah pakai OAuth Playground:
+    1. Buka https://developers.google.com/oauthplayground
+    2. Klik ikon gerigi (Settings) di kanan atas
+    3. Centang "Use your own OAuth credentials"
+    4. Isi "OAuth Client ID" dan "OAuth Client secret" — ambil dari
+       isi file credentials.json yang tadi diunduh (buka filenya
+       dengan Notepad untuk lihat isinya)
+    5. Tutup panel Settings
+    6. Di kolom kiri ("Step 1"), ketik atau cari:
+           https://www.googleapis.com/auth/gmail.send
+       Centang kotaknya, klik "Authorize APIs"
+    7. Login pakai akun Gmail yang didaftarkan sebagai Test user di
+       Langkah 3 tadi, izinkan aksesnya
+    8. Klik "Exchange authorization code for tokens"
+    9. Salin nilai "Refresh token" yang muncul
+
+    Buat file baru bernama token.json di folder yang sama
+    (storage/app/credentials/token.json), isinya:
+
+        {
+          "refresh_token": "TEMPEL_REFRESH_TOKEN_DI_SINI"
+        }
+
+  LANGKAH 6 — Tes apakah sudah berhasil
+    Jalankan di terminal:
+        php artisan perpus:mail-test alamat-emailmu@gmail.com
+    Kalau berhasil, cek inbox email tujuan — harus ada email masuk.
+
+  Alternatif tanpa file (kalau lebih suka isi di .env langsung):
+    Buka file .env, isi tiga baris ini dengan data dari credentials.json
+    dan refresh token di atas:
+        GMAIL_CLIENT_ID=...
+        GMAIL_CLIENT_SECRET=...
+        GMAIL_REFRESH_TOKEN=...
+
+  CATATAN: selama project Google Cloud-mu masih berstatus "Testing"
+  (belum di-publish), refresh token akan kedaluwarsa tiap ±7 hari dan
+  harus diulang dari Langkah 5. Ini normal dan hanya memengaruhi
+  pengiriman email asli — kode OTP tetap tercatat di
+  storage/logs/laravel.log selama mode percobaan aktif, jadi tidak
+  pernah benar-benar "macet".
+
+
+------------------------------------------------------------------------
+ 6. AKUN DEMO & CARA MASUK
+------------------------------------------------------------------------
+Kalau sudah menjalankan ShowcaseSeeder (Bagian 3), inilah akun-akun
+yang bisa langsung dipakai untuk login. Kata sandi SEMUA akun demo ini
+SAMA:  Demo@12345
+
+  SUPER ADMIN (Kepala Pustaka) — akses penuh
+    Username : kepala
+    Password : Demo@12345
+
+  PUSTAKAWAN — kelola buku & peminjaman
+    Username : pustakawan1
+    Password : Demo@12345
+
+  PUSTAKAWAN (contoh: anggota yang naik jadi staf)
+    Username : rizky.hidayat
+    Password : Demo@12345
+
+  ANGGOTA — Mahasiswa (riwayat lengkap: pinjam, kembali, ditolak)
+    Username : budi.s
+    Password : Demo@12345
+
+  ANGGOTA — Siswa (contoh buku yang sedang telat dikembalikan)
+    Username : sari.dewi
+    Password : Demo@12345
+
+  ANGGOTA — Guru (contoh denda yang sudah lunas)
+    Username : rina.marlina
+    Password : Demo@12345
+
+  ANGGOTA — Umum (contoh buku yang dinyatakan hilang)
+    Username : agus.pratama
+    Password : Demo@12345
+
+  Anggota lain yang juga bisa dicoba (semua password sama):
+    dewi.anggraini, fajar.n, maya.putri, hendra.w, nadia.oktavia,
+    bambang.hartono, putri.ramadhani, yusuf.alfarizi, indah.permata,
+    taufik.ismail (anggota baru, belum ada riwayat pinjam),
+    anita.wulandari (anggota baru, belum ada riwayat pinjam)
+
+Bisa login pakai USERNAME atau EMAIL — keduanya berfungsi sama.
+Format email tiap anggota: usernamenya-tanpa-titik@contoh.test
+Contoh: "budi.s" emailnya "budis@contoh.test"
+
+
+------------------------------------------------------------------------
+ 7. PETA FITUR: APA YANG SUDAH ADA, APA YANG BELUM
+------------------------------------------------------------------------
+SUDAH BERFUNGSI PENUH (bisa dicoba sekarang):
+  [x] Daftar akun baru + verifikasi email lewat kode OTP
+  [x] Masuk / keluar, dengan pembatasan percobaan gagal (anti brute-force)
+  [x] Lupa password + atur ulang lewat kode OTP
+  [x] Ganti password dari halaman profil
+  [x] Password diamankan dengan Argon2id (bukan bcrypt biasa)
+  [x] Dashboard anggota (daftar buku yang sedang dipinjam/diajukan)
+  [x] Dashboard staf (ringkasan jumlah permintaan & keterlambatan)
+  [x] Halaman hasil scan QR per buku (bisa dibuka tanpa login)
+  [x] REST API lengkap (lihat README.md bagian 4) — bisa dipakai untuk
+      bikin aplikasi mobile terpisah nantinya
+  [x] Seluruh "mesin" peminjaman (BorrowingService): ajukan pinjam,
+      setuju/tolak, ajukan kembali, konfirmasi, hitung denda,
+      perpanjang, tandai hilang — semuanya sudah berfungsi dan teruji,
+      tinggal menunggu tampilan halamannya (lihat poin di bawah)
+
+BELUM ADA TAMPILAN HALAMANNYA (fondasinya sudah siap di balik layar):
+  [ ] Halaman katalog publik untuk mencari/filter semua buku di web
+      (sementara katalog hanya bisa diakses lewat REST API)
+  [ ] Halaman anggota untuk mengajukan pinjam & kembali langsung dari
+      halaman detail buku
+  [ ] Panel staf: tambah/ubah buku, kelola kategori, setujui
+      peminjaman, proses pengembalian, cetak label QR, laporan
+  [ ] Panel Super Admin: kelola pengguna, pengaturan sistem, log
+      aktivitas, backup data
+
+Kenapa belum semua selesai? Supaya kualitas tetap terjaga — fondasi
+yang berisiko tinggi kalau salah (database, keamanan, alur bisnis)
+sudah dibangun dan diuji dengan sangat hati-hati dulu. Halaman-halaman
+di atas tinggal "dipasang" di atas fondasi yang sudah ada ini.
+
+
+------------------------------------------------------------------------
+ 8. STRUKTUR FOLDER (buat yang mau mengubah kode)
+------------------------------------------------------------------------
+  app/Models/              Data: User, Book, Borrowing, Rating, dst.
+  app/Services/             Logika bisnis:
+                              BorrowingService.php = otak sistem pinjam
+                              GmailApiService.php  = pengirim email OTP
+                              LibrarySettings.php  = pengaturan sistem
+  app/Http/Controllers/     Auth/ = login, daftar, lupa password
+                              Api/  = REST API
+  app/Policies/              Aturan siapa boleh apa (RBAC)
+  database/migrations/       Struktur tabel database
+  database/seeders/          LibrarySeeder.php  = data dasar wajib
+                              ShowcaseSeeder.php = data contoh (opsional)
+  resources/js/Pages/        Halaman-halaman Vue (tampilan)
+  resources/js/Layouts/      Kerangka halaman (header, dsb)
+  routes/web.php             Alamat halaman web
+  routes/api.php             Alamat REST API
+
+
+------------------------------------------------------------------------
+ 9. MASALAH UMUM & SOLUSINYA
+------------------------------------------------------------------------
+"could not find driver" saat migrate
+  -> Ekstensi PHP pdo_pgsql belum aktif. Buka file php.ini, cari baris
+     ";extension=pdo_pgsql", hapus tanda titik-koma di depannya, lalu
+     restart server PHP-mu.
+
+"SQLSTATE[08006] could not connect to server"
+  -> PostgreSQL belum menyala, atau DB_HOST/DB_PORT di .env salah.
+     Pastikan PostgreSQL sudah berjalan (cek di Services pada Windows,
+     atau "pg_isready" di terminal Mac/Linux).
+
+Halaman putih kosong / error 500
+  -> Jalankan: php artisan config:clear && php artisan cache:clear
+     Lalu cek isi storage/logs/laravel.log untuk pesan error detailnya.
+
+npm run dev jalan tapi tampilan tidak berubah
+  -> Pastikan Terminal 1 (php artisan serve) juga masih menyala.
+     Keduanya harus jalan BERSAMAAN.
+
+Email verifikasi tidak sampai ke inbox
+  -> Wajar kalau Gmail API belum disiapkan (lihat Bagian 5). Buka
+     storage/logs/laravel.log, cari baris "[OTP-LOKAL]" — kode OTP-nya
+     tercatat di situ.
+
+Lupa password akun yang dibuat sendiri (bukan akun demo)
+  -> Pakai fitur "Lupa password" di halaman login (butuh Gmail API
+     aktif), atau reset manual lewat database:
+        php artisan tinker
+        >>> $u = App\Models\User::where('username','USERNAME_KAMU')->first();
+        >>> $u->password = Illuminate\Support\Facades\Hash::make('PasswordBaru123');
+        >>> $u->save();
+
+
+------------------------------------------------------------------------
+10. PERINTAH-PERINTAH PENTING (CONTEKAN CEPAT)
+------------------------------------------------------------------------
+  composer install                        Pasang semua paket PHP
+  npm install                              Pasang semua paket tampilan
+  php artisan key:generate                 Buat kunci enkripsi
+  php artisan perpus:install               Pasang database + akun admin
+  php artisan db:seed --class=ShowcaseSeeder   Isi data contoh realistis
+  php artisan migrate:fresh                Hapus & buat ulang semua tabel
+  php artisan serve                        Jalankan server (localhost:8000)
+  npm run dev                              Jalankan mode pengembangan
+  npm run build                            Siapkan untuk pemakaian asli
+  php artisan perpus:mail-test email@x.com Tes pengiriman email Gmail
+  php artisan test                         Jalankan semua pengujian otomatis
+  php artisan route:list                   Lihat semua alamat halaman
+  php artisan tinker                       Buka konsol interaktif Laravel
+
+========================================================================
+ Selesai. Selamat mencoba! Kalau ada yang bingung, baca ulang bagian
+ yang relevan di atas — tiap langkah sudah ditulis urut dan lengkap.
+========================================================================

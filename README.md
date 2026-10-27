@@ -1,4 +1,15 @@
 # Perpustakaan Digital — Laravel + Inertia + Vue 3
+> **⚠️ DISCLAIMER — KERANGKA MENTAH**
+>
+> **Perpustakaan Digital** ini adalah **kerangka (skeleton) versi pengembangan**, **bukan** sistem yang siap produksi atau siap dipakai langsung di perpustakaan / institusi.
+>
+> - Harus dijalankan mengikuti petunjuk di README.
+> - Sebaiknya ditinjau oleh pustakawan, admin perpustakaan, atau IT institusi.
+> - Kesesuaian fitur (koleksi, peminjaman, keanggotaan, denda, laporan, API) **bergantung kebutuhan dan evaluasi klien**.
+> - Keamanan (auth, data anggota, konfigurasi email/API) **belum** diklaim cukup untuk lingkungan produksi.
+>
+> Saya sebagai developer hanya membuat dan mengembangkan **kerangka dasar**.  
+> Sesuai atau tidaknya, aman atau belum — **penilaian ada pada pengguna / klien**.
 
 Sistem manajemen perpustakaan full-stack modern untuk portfolio.
 
